@@ -8,6 +8,8 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using App.Metrics.AspNetCore;
+using App.Metrics.Formatters.Prometheus;
+using App.Metrics;
 
 namespace netapp
 {
@@ -20,7 +22,19 @@ namespace netapp
 
         public static IWebHost BuildWebHost(string[] args) =>
             WebHost.CreateDefaultBuilder(args)
-                .UseMetrics()
+                .ConfigureMetricsWithDefaults(builder =>
+                {
+                    builder.OutputMetrics.AsPrometheusPlainText();
+                })
+                .UseMetrics(
+                    options =>
+                    {
+                        options.EndpointOptions = endpointsOptions =>
+                            {
+                                endpointsOptions.MetricsTextEndpointOutputFormatter = new MetricsPrometheusTextOutputFormatter();
+                                endpointsOptions.MetricsEndpointOutputFormatter = new MetricsPrometheusTextOutputFormatter();
+                            };
+                    })
                 .UseStartup<Startup>()
                 .Build();
     }
